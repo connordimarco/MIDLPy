@@ -12,7 +12,7 @@ RE_KM = 6371.0
 
 _NUMERIC_COLS = ("Bx", "By", "Bz", "Ux", "Uy", "Uz", "rho", "T")
 
-METHODS = {"ballistic", "mhd"}
+METHODS = {"ballistic"}
 
 
 def _ballistic_propagate_df(df: pd.DataFrame, target_re: float) -> pd.DataFrame:
@@ -86,8 +86,10 @@ def propagate(ds: xr.Dataset, method: str, target_re: float) -> xr.Dataset:
         A MIDL L1 dataset as returned by ``midl.load(..., 'l1')``. Must
         contain the per-timestamp source position variable ``X`` (Re) and
         the standard numeric columns (Bx, By, Bz, Ux, Uy, Uz, rho, T).
-    method : {'ballistic', 'mhd'}
-        Propagation method. Only ``'ballistic'`` is currently implemented.
+    method : {'ballistic'}
+        Propagation method. Client-side MHD is not supported; use
+        ``midl.load(..., 'mhd', target_re=...)`` to fetch server-side
+        MHD-propagated data instead.
     target_re : float
         Target boundary distance along the Sun-Earth line, in Earth radii.
 
@@ -107,11 +109,6 @@ def propagate(ds: xr.Dataset, method: str, target_re: float) -> xr.Dataset:
     method = method.lower()
     if method not in METHODS:
         raise ValueError(f"Unknown method {method!r}. Valid methods: {sorted(METHODS)}")
-
-    if method == "mhd":
-        raise NotImplementedError(
-            "1D MHD propagation is not yet implemented. Use method='ballistic'."
-        )
 
     if "X" not in ds.data_vars:
         raise ValueError(

@@ -101,9 +101,9 @@ class TestPropagate:
         assert result["Bx"].attrs["units"] == "nT"
         assert result["Ux"].attrs["coordinate_system"] == "GSM"
 
-    def test_mhd_not_implemented(self):
+    def test_mhd_rejected_as_unknown(self):
         ds = self._load_l1()
-        with pytest.raises(NotImplementedError, match="1D MHD"):
+        with pytest.raises(ValueError, match="Unknown method"):
             propagate(ds, "mhd", 14)
 
     def test_unknown_method(self):

@@ -38,11 +38,16 @@ def _to_dataset(df: pd.DataFrame, target: str) -> xr.Dataset:
     ds = df.to_xarray().rename({"timestamp": "time"})
     ds.attrs["source"] = "MIDL"
     ds.attrs["url"] = "https://csem.engin.umich.edu/MIDL/"
-    ds.attrs["target"] = target
     if target == "L1":
+        ds.attrs["target"] = target
         ds.attrs["midl_propagation"] = None
+    elif target.startswith("mhd_"):
+        target_re = float(int(target.removeprefix("mhd_").removesuffix("Re")))
+        ds.attrs["target"] = f"{int(target_re)}Re"
+        ds.attrs["midl_propagation"] = {"method": "mhd", "target_re": target_re}
     else:
         target_re = float(target.removesuffix("Re"))
+        ds.attrs["target"] = target
         ds.attrs["midl_propagation"] = {"method": "ballistic", "target_re": target_re}
     for var, attrs in _VAR_ATTRS.items():
         if var in ds:
@@ -50,7 +55,13 @@ def _to_dataset(df: pd.DataFrame, target: str) -> xr.Dataset:
     return ds
 
 
-def load(start: Timelike, end: Timelike, target: str) -> xr.Dataset:
+def load(
+    start: Timelike,
+    end: Timelike,
+    target: str,
+    *,
+    target_re: float | int | None = None,
+) -> xr.Dataset:
     """Load MIDL solar wind data for a time range.
 
     Downloads monthly CSV files from the MIDL web host on first access
@@ -63,8 +74,14 @@ def load(start: Timelike, end: Timelike, target: str) -> xr.Dataset:
         Time range bounds (inclusive). Accepts ISO 8601 strings down to
         the minute, e.g. ``"2015-03-17"`` or ``"2015-03-17 14:30"``.
     target : str
-        Propagation target: ``"14re"``, ``"32re"``, or ``"l1"``
-        (case-insensitive).
+        Data product (case-insensitive):
+
+        - ``"l1"`` — merged L1 observations (unpropagated).
+        - ``"14re"`` / ``"32re"`` — ballistically propagated to 14 or 32 Re.
+        - ``"mhd"`` — 1D MHD propagated. Requires ``target_re``.
+    target_re : int, optional
+        Required when ``target="mhd"``. Must be ``0`` or an integer in
+        ``[14, 190]``. Must be ``None`` for all other targets.
 
     Returns
     -------
@@ -77,7 +94,7 @@ def load(start: Timelike, end: Timelike, target: str) -> xr.Dataset:
     if start_ts > end_ts:
         raise ValueError(f"start ({start_ts}) must be <= end ({end_ts})")
 
-    canonical = resolve_target(target)
+    canonical = resolve_target(target, target_re)
     months = months_in_range(start_ts, end_ts)
 
     frames: list[pd.DataFrame] = []

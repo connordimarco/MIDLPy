@@ -66,6 +66,25 @@ class TestLoad:
             assert "B_source" in ds.data_vars
             assert ds.attrs["target"] == "L1"
 
+    def test_load_mhd(self):
+        with patch(
+            "midl._loader.ensure_cached",
+            return_value=DATA_DIR / "202403_mhd_032Re.csv",
+        ):
+            ds = load("2024-03-01 00:00", "2024-03-01 00:03", "mhd", target_re=32)
+        assert set(ds.data_vars) >= {"Bx", "By", "Bz", "Ux", "Uy", "Uz", "rho", "T"}
+        assert ds.attrs["target"] == "32Re"
+        assert ds.attrs["midl_propagation"] == {"method": "mhd", "target_re": 32.0}
+        assert ds["Bx"].attrs["units"] == "nT"
+
+    def test_load_mhd_requires_target_re(self):
+        with pytest.raises(ValueError, match="requires target_re"):
+            load("2024-03-01", "2024-03-01 00:03", "mhd")
+
+    def test_load_rejects_target_re_on_ballistic(self):
+        with pytest.raises(ValueError, match="only valid with target='mhd'"):
+            load("2024-03-01", "2024-03-01 00:03", "32re", target_re=32)
+
     def test_load_rejects_bad_range(self):
         with pytest.raises(ValueError, match="must be <="):
             load("2024-03-02", "2024-03-01", "32re")

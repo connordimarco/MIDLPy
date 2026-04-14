@@ -39,7 +39,8 @@ Attributes:
 ```
 
 The `14re` and `32re` downloads are ballistically propagated server-side.
-If you want a different boundary, download `l1` and propagate it yourself:
+If you want a different boundary for ballistic propagation, download `l1`
+and propagate it yourself:
 
 ```python
 l1 = midl.load("2024-05-10", "2024-05-11", "l1")
@@ -53,8 +54,15 @@ ds_20 = l1.midl.propagate("ballistic", 20)
 `X` column. A `ValueError` is raised if you pass a dataset without `X`
 (e.g. a pre-propagated `14re`/`32re` download). If the dataset is already
 tagged as propagated, a `UserWarning` is emitted and the call proceeds.
-1D MHD is reserved as `method='mhd'` but currently raises
-`NotImplementedError`.
+
+1D MHD-propagated data is also available, pre-computed on the server.
+Request it with `target="mhd"` and an integer `target_re` in `{0} ∪ [14, 190]`:
+
+```python
+ds_mhd = midl.load("2024-05-10", "2024-05-11", "mhd", target_re=32)
+```
+
+Client-side MHD propagation is not supported.
 
 Save to file:
 
