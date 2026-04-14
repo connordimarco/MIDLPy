@@ -56,7 +56,7 @@ ds_20 = l1.midl.propagate("ballistic", 20)
 tagged as propagated, a `UserWarning` is emitted and the call proceeds.
 
 1D MHD-propagated data is also available, pre-computed on the server.
-Request it with `target="mhd"` and an integer `target_re` in `{0} ∪ [14, 190]`:
+Request it with `target="mhd"` and an integer `target_re` in `[-20, 180]`:
 
 ```python
 ds_mhd = midl.load("2024-05-10", "2024-05-11", "mhd", target_re=32)

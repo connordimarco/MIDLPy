@@ -15,7 +15,7 @@ TARGETS: dict[str, str] = {
     "l1": "L1",
 }
 
-MHD_VALID_RE: frozenset[int] = frozenset({0, *range(14, 191)})
+MHD_VALID_RE: frozenset[int] = frozenset(range(-20, 181))
 
 
 def _canonical_mhd(target_re: float | int) -> str:
@@ -30,7 +30,7 @@ def _canonical_mhd(target_re: float | int) -> str:
     re_int = int(as_float)
     if re_int not in MHD_VALID_RE:
         raise ValueError(
-            f"MHD target_re must be 0 or in [14, 190], got {re_int}"
+            f"MHD target_re must be an integer in [-20, 180], got {re_int}"
         )
     return f"mhd_{re_int:03d}Re"
 
@@ -43,14 +43,14 @@ def resolve_target(target: str, target_re: float | int | None = None) -> str:
     target : str
         ``"l1"``, ``"14re"``, ``"32re"``, or ``"mhd"`` (case-insensitive).
     target_re : int, optional
-        Required when ``target="mhd"``. Must be ``0`` or in ``[14, 190]``.
+        Required when ``target="mhd"``. Must be an integer in ``[-20, 180]``.
         Must be ``None`` for all other targets.
     """
     key = target.lower()
     if key == "mhd":
         if target_re is None:
             raise ValueError(
-                "target='mhd' requires target_re (0 or an integer in [14, 190])"
+                "target='mhd' requires target_re (an integer in [-20, 180])"
             )
         return _canonical_mhd(target_re)
 

@@ -80,8 +80,8 @@ def load(
         - ``"14re"`` / ``"32re"`` — ballistically propagated to 14 or 32 Re.
         - ``"mhd"`` — 1D MHD propagated. Requires ``target_re``.
     target_re : int, optional
-        Required when ``target="mhd"``. Must be ``0`` or an integer in
-        ``[14, 190]``. Must be ``None`` for all other targets.
+        Required when ``target="mhd"``. Must be an integer in
+        ``[-20, 180]``. Must be ``None`` for all other targets.
 
     Returns
     -------

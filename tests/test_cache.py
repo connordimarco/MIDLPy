@@ -31,8 +31,14 @@ class TestResolveTarget:
     def test_mhd_0(self):
         assert resolve_target("mhd", target_re=0) == "mhd_000Re"
 
-    def test_mhd_190(self):
-        assert resolve_target("mhd", target_re=190) == "mhd_190Re"
+    def test_mhd_180(self):
+        assert resolve_target("mhd", target_re=180) == "mhd_180Re"
+
+    def test_mhd_negative_boundary(self):
+        assert resolve_target("mhd", target_re=-20) == "mhd_-20Re"
+
+    def test_mhd_small_negative(self):
+        assert resolve_target("mhd", target_re=-5) == "mhd_-05Re"
 
     def test_mhd_accepts_integer_float(self):
         assert resolve_target("mhd", target_re=32.0) == "mhd_032Re"
@@ -42,12 +48,12 @@ class TestResolveTarget:
             resolve_target("mhd")
 
     def test_mhd_below_range(self):
-        with pytest.raises(ValueError, match=r"0 or in \[14, 190\]"):
-            resolve_target("mhd", target_re=13)
+        with pytest.raises(ValueError, match=r"\[-20, 180\]"):
+            resolve_target("mhd", target_re=-21)
 
     def test_mhd_above_range(self):
-        with pytest.raises(ValueError, match=r"0 or in \[14, 190\]"):
-            resolve_target("mhd", target_re=191)
+        with pytest.raises(ValueError, match=r"\[-20, 180\]"):
+            resolve_target("mhd", target_re=181)
 
     def test_mhd_non_integer(self):
         with pytest.raises(ValueError, match="must be an integer"):
