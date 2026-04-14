@@ -39,6 +39,11 @@ def _to_dataset(df: pd.DataFrame, target: str) -> xr.Dataset:
     ds.attrs["source"] = "MIDL"
     ds.attrs["url"] = "https://csem.engin.umich.edu/MIDL/"
     ds.attrs["target"] = target
+    if target == "L1":
+        ds.attrs["midl_propagation"] = None
+    else:
+        target_re = float(target.removesuffix("Re"))
+        ds.attrs["midl_propagation"] = {"method": "ballistic", "target_re": target_re}
     for var, attrs in _VAR_ATTRS.items():
         if var in ds:
             ds[var].attrs.update(attrs)

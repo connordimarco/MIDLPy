@@ -32,10 +32,29 @@ Data variables:
     rho      (time) float64 488B 5.169 5.439 5.481 5.359 ... 6.131 6.363 6.323
     T        (time) float64 488B 1.33e+05 1.321e+05 ... 1.159e+05 1.159e+05
 Attributes:
-    source:   MIDL
-    url:      https://csem.engin.umich.edu/MIDL/
-    target:   32Re
+    source:             MIDL
+    url:                https://csem.engin.umich.edu/MIDL/
+    target:             32Re
+    midl_propagation:   {'method': 'ballistic', 'target_re': 32.0}
 ```
+
+The `14re` and `32re` downloads are ballistically propagated server-side.
+If you want a different boundary, download `l1` and propagate it yourself:
+
+```python
+l1 = midl.load("2024-05-10", "2024-05-11", "l1")
+
+ds_20 = midl.propagate(l1, "ballistic", 20)   # or any target in Re
+# equivalent:
+ds_20 = l1.midl.propagate("ballistic", 20)
+```
+
+`propagate()` reads the per-timestamp source position from the L1 dataset's
+`X` column. A `ValueError` is raised if you pass a dataset without `X`
+(e.g. a pre-propagated `14re`/`32re` download). If the dataset is already
+tagged as propagated, a `UserWarning` is emitted and the call proceeds.
+1D MHD is reserved as `method='mhd'` but currently raises
+`NotImplementedError`.
 
 Save to file:
 
