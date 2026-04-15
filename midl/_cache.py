@@ -9,20 +9,27 @@ import requests
 
 BASE_URL = "https://csem.engin.umich.edu/MIDL/data"
 
-TARGETS: dict[str, str] = {
-    "14re": "14Re",
-    "32re": "32Re",
-    "l1": "L1",
-}
+MHD_VALID_RE: frozenset[int] = frozenset(range(-20, 181))
 
 
-def resolve_target(target: str) -> str:
-    """Normalize a case-insensitive target string to its canonical form."""
-    canonical = TARGETS.get(target.lower())
-    if canonical is None:
-        valid = ", ".join(TARGETS.values())
-        raise ValueError(f"Unknown target {target!r}. Valid targets: {valid}")
-    return canonical
+def canonical_mhd(target_re: float | int) -> str:
+    """Validate and canonicalize an MHD target Re value.
+
+    MHD data is only available at integer Re in ``[-20, 180]``.
+    """
+    if not isinstance(target_re, (int, float)) or isinstance(target_re, bool):
+        raise ValueError(
+            f"MHD target_re must be an integer, got {type(target_re).__name__}"
+        )
+    as_float = float(target_re)
+    if not as_float.is_integer():
+        raise ValueError(f"MHD target_re must be an integer, got {target_re!r}")
+    re_int = int(as_float)
+    if re_int not in MHD_VALID_RE:
+        raise ValueError(
+            f"MHD target_re must be an integer in [-20, 180], got {re_int}"
+        )
+    return f"mhd_{re_int:03d}Re"
 
 
 def csv_url(year_month: str, target: str) -> str:
@@ -33,9 +40,12 @@ def csv_url(year_month: str, target: str) -> str:
     year_month : str
         ``"YYYY-MM"`` string.
     target : str
-        Canonical target name (``"14Re"``, ``"32Re"``, or ``"L1"``).
+        Canonical target name (``"14Re"``, ``"32Re"``, ``"L1"``, or
+        ``"mhd_NNNRe"``).
     """
     year, month = year_month.split("-")
+    if target.startswith("mhd_"):
+        return f"{BASE_URL}/{year}/{month}/mhd/{year}{month}_{target}.csv"
     return f"{BASE_URL}/{year}/{month}/{year}{month}_{target}.csv"
 
 

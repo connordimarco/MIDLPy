@@ -1,29 +1,46 @@
 """Tests for midl._cache."""
 
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from midl._cache import csv_url, ensure_cached, resolve_target
+from midl._cache import canonical_mhd, csv_url, ensure_cached
 
 
-class TestResolveTarget:
-    def test_lowercase(self):
-        assert resolve_target("32re") == "32Re"
+class TestCanonicalMhd:
+    def test_mhd_32(self):
+        assert canonical_mhd(32) == "mhd_032Re"
 
-    def test_mixed_case(self):
-        assert resolve_target("14Re") == "14Re"
+    def test_mhd_0(self):
+        assert canonical_mhd(0) == "mhd_000Re"
 
-    def test_uppercase(self):
-        assert resolve_target("L1") == "L1"
+    def test_mhd_180(self):
+        assert canonical_mhd(180) == "mhd_180Re"
 
-    def test_all_lower_l1(self):
-        assert resolve_target("l1") == "L1"
+    def test_mhd_negative_boundary(self):
+        assert canonical_mhd(-20) == "mhd_-20Re"
 
-    def test_invalid(self):
-        with pytest.raises(ValueError, match="Unknown target"):
-            resolve_target("invalid")
+    def test_mhd_small_negative(self):
+        assert canonical_mhd(-5) == "mhd_-05Re"
+
+    def test_mhd_accepts_integer_float(self):
+        assert canonical_mhd(32.0) == "mhd_032Re"
+
+    def test_mhd_below_range(self):
+        with pytest.raises(ValueError, match=r"\[-20, 180\]"):
+            canonical_mhd(-21)
+
+    def test_mhd_above_range(self):
+        with pytest.raises(ValueError, match=r"\[-20, 180\]"):
+            canonical_mhd(181)
+
+    def test_mhd_non_integer(self):
+        with pytest.raises(ValueError, match="must be an integer"):
+            canonical_mhd(32.5)
+
+    def test_mhd_rejects_non_numeric(self):
+        with pytest.raises(ValueError, match="must be an integer"):
+            canonical_mhd("32")  # type: ignore[arg-type]
 
 
 class TestCsvUrl:
@@ -34,6 +51,14 @@ class TestCsvUrl:
     def test_l1(self):
         url = csv_url("2024-01", "L1")
         assert url == "https://csem.engin.umich.edu/MIDL/data/2024/01/202401_L1.csv"
+
+    def test_mhd(self):
+        url = csv_url("2024-05", "mhd_032Re")
+        assert url == "https://csem.engin.umich.edu/MIDL/data/2024/05/mhd/202405_mhd_032Re.csv"
+
+    def test_mhd_zero(self):
+        url = csv_url("2024-05", "mhd_000Re")
+        assert url == "https://csem.engin.umich.edu/MIDL/data/2024/05/mhd/202405_mhd_000Re.csv"
 
 
 class TestEnsureCached:
