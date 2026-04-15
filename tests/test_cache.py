@@ -1,71 +1,46 @@
 """Tests for midl._cache."""
 
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from midl._cache import csv_url, ensure_cached, resolve_target
+from midl._cache import canonical_mhd, csv_url, ensure_cached
 
 
-class TestResolveTarget:
-    def test_lowercase(self):
-        assert resolve_target("32re") == "32Re"
-
-    def test_mixed_case(self):
-        assert resolve_target("14Re") == "14Re"
-
-    def test_uppercase(self):
-        assert resolve_target("L1") == "L1"
-
-    def test_all_lower_l1(self):
-        assert resolve_target("l1") == "L1"
-
-    def test_invalid(self):
-        with pytest.raises(ValueError, match="Unknown target"):
-            resolve_target("invalid")
-
+class TestCanonicalMhd:
     def test_mhd_32(self):
-        assert resolve_target("mhd", target_re=32) == "mhd_032Re"
+        assert canonical_mhd(32) == "mhd_032Re"
 
     def test_mhd_0(self):
-        assert resolve_target("mhd", target_re=0) == "mhd_000Re"
+        assert canonical_mhd(0) == "mhd_000Re"
 
     def test_mhd_180(self):
-        assert resolve_target("mhd", target_re=180) == "mhd_180Re"
+        assert canonical_mhd(180) == "mhd_180Re"
 
     def test_mhd_negative_boundary(self):
-        assert resolve_target("mhd", target_re=-20) == "mhd_-20Re"
+        assert canonical_mhd(-20) == "mhd_-20Re"
 
     def test_mhd_small_negative(self):
-        assert resolve_target("mhd", target_re=-5) == "mhd_-05Re"
+        assert canonical_mhd(-5) == "mhd_-05Re"
 
     def test_mhd_accepts_integer_float(self):
-        assert resolve_target("mhd", target_re=32.0) == "mhd_032Re"
-
-    def test_mhd_missing_target_re(self):
-        with pytest.raises(ValueError, match="requires target_re"):
-            resolve_target("mhd")
+        assert canonical_mhd(32.0) == "mhd_032Re"
 
     def test_mhd_below_range(self):
         with pytest.raises(ValueError, match=r"\[-20, 180\]"):
-            resolve_target("mhd", target_re=-21)
+            canonical_mhd(-21)
 
     def test_mhd_above_range(self):
         with pytest.raises(ValueError, match=r"\[-20, 180\]"):
-            resolve_target("mhd", target_re=181)
+            canonical_mhd(181)
 
     def test_mhd_non_integer(self):
         with pytest.raises(ValueError, match="must be an integer"):
-            resolve_target("mhd", target_re=32.5)
+            canonical_mhd(32.5)
 
-    def test_target_re_rejected_for_ballistic(self):
-        with pytest.raises(ValueError, match="only valid with target='mhd'"):
-            resolve_target("14re", target_re=14)
-
-    def test_target_re_rejected_for_l1(self):
-        with pytest.raises(ValueError, match="only valid with target='mhd'"):
-            resolve_target("l1", target_re=0)
+    def test_mhd_rejects_non_numeric(self):
+        with pytest.raises(ValueError, match="must be an integer"):
+            canonical_mhd("32")  # type: ignore[arg-type]
 
 
 class TestCsvUrl:

@@ -8,7 +8,6 @@ import pandas as pd
 import pytest
 import xarray as xr
 
-import midl
 from midl._loader import load
 from midl._propagate import _ballistic_propagate_df, propagate
 
@@ -118,7 +117,7 @@ class TestPropagate:
 
     def test_requires_x_column(self):
         with patch("midl._loader.ensure_cached", return_value=DATA_DIR / "202403_32Re.csv"):
-            ds = load("2024-03-01 00:00", "2024-03-01 00:09", "32re")
+            ds = load("2024-03-01 00:00", "2024-03-01 00:09", 32)
         with pytest.raises(ValueError, match="requires the L1 dataset"):
             propagate(ds, "ballistic", 14)
 
@@ -145,10 +144,5 @@ class TestLoaderTagging:
 
     def test_32re_tag(self):
         with patch("midl._loader.ensure_cached", return_value=DATA_DIR / "202403_32Re.csv"):
-            ds = load("2024-03-01 00:00", "2024-03-01 00:09", "32re")
+            ds = load("2024-03-01 00:00", "2024-03-01 00:09", 32)
         assert ds.attrs["midl_propagation"] == {"method": "ballistic", "target_re": 32.0}
-
-
-class TestTopLevelExport:
-    def test_propagate_importable(self):
-        assert midl.propagate is propagate

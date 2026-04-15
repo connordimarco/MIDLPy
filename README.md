@@ -13,7 +13,7 @@ pip install csem-midl
 ```python
 import midl
 
-ds = midl.load("2005-01-01 00:00", "2005-01-01 01:00", "32re")
+ds = midl.load("2005-01-01 00:00", "2005-01-01 01:00", 32)
 print(ds)
 ```
 
@@ -37,35 +37,23 @@ Attributes:
     target:             32Re
     midl_propagation:   {'method': 'ballistic', 'target_re': 32.0}
 ```
-
-The `14re` and `32re` downloads are ballistically propagated server-side.
-If you want a different boundary for ballistic propagation, download `l1`
-and propagate it yourself:
-
 ```python
-l1 = midl.load("2024-05-10", "2024-05-11", "l1")
+# 14Re and 32sRe Ballistically-propagated data are available for direct download
+midl.load("2024-05-10 00:00", "2024-05-11 01:00", 14, method="ballistic") 
+midl.load("2024-05-10 00:00", "2024-05-11 01:00", 32, method="ballistic") 
 
-ds_20 = midl.propagate(l1, "ballistic", 20)   # or any target in Re
-# equivalent:
-ds_20 = l1.midl.propagate("ballistic", 20)
+# [-20:180]Re MHD-propagated data are available for direct download
+midl.load("2024-05-10 00:00", "2024-05-11 01:00", 30, method="mhd")
+
+# Any value can be ballistically propagated client-side
+midl.load("2024-05-10 00:00", "2024-06-11 01:00", 20.25, method="ballistic") 
+
+# Data at L1 can be downloaded directly as well 
+midl.load("2024-05-10 00:00", "2024-05-11 01:00", "l1") 
 ```
-
-`propagate()` reads the per-timestamp source position from the L1 dataset's
-`X` column. A `ValueError` is raised if you pass a dataset without `X`
-(e.g. a pre-propagated `14re`/`32re` download). If the dataset is already
-tagged as propagated, a `UserWarning` is emitted and the call proceeds.
-
-1D MHD-propagated data is also available, pre-computed on the server.
-Request it with `target="mhd"` and an integer `target_re` in `[-20, 180]`:
-
-```python
-ds_mhd = midl.load("2024-05-10", "2024-05-11", "mhd", target_re=32)
-```
-
 Client-side MHD propagation is not supported.
 
-Save to file:
-
+Saving to file:
 ```python
 midl.to_csv(ds, "storm.csv")
 midl.to_dat(ds, "storm.dat")

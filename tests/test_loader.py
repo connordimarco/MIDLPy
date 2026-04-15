@@ -3,6 +3,7 @@
 from pathlib import Path
 from unittest.mock import patch
 
+import numpy as np
 import pandas as pd
 import pytest
 import xarray as xr
@@ -51,40 +52,134 @@ class TestToDataset:
         assert ds["Ux"].attrs["coordinate_system"] == "GSM"
 
 
-class TestLoad:
+class TestLoadFixedBallistic:
     def test_load_slices_time(self):
         with patch("midl._loader.ensure_cached", return_value=DATA_DIR / "202403_32Re.csv"):
-            ds = load("2024-03-01 00:02", "2024-03-01 00:06", "32re")
+            ds = load("2024-03-01 00:02", "2024-03-01 00:06", 32)
             assert len(ds.time) == 5  # 00:02, 00:03, 00:04, 00:05, 00:06
             assert ds.time.values[0] == pd.Timestamp("2024-03-01 00:02")
             assert ds.time.values[-1] == pd.Timestamp("2024-03-01 00:06")
 
+    def test_default_method_is_ballistic(self):
+        with patch("midl._loader.ensure_cached", return_value=DATA_DIR / "202403_32Re.csv"):
+            ds = load("2024-03-01 00:00", "2024-03-01 00:03", 32)
+        assert ds.attrs["midl_propagation"] == {"method": "ballistic", "target_re": 32.0}
+
+    def test_load_14re(self):
+        with patch("midl._loader.ensure_cached", return_value=DATA_DIR / "202403_32Re.csv"):
+            ds = load("2024-03-01 00:00", "2024-03-01 00:03", 14)
+        assert ds.attrs["target"] == "14Re"
+
+    def test_load_float_14(self):
+        with patch("midl._loader.ensure_cached", return_value=DATA_DIR / "202403_32Re.csv"):
+            ds = load("2024-03-01 00:00", "2024-03-01 00:03", 14.0)
+        assert ds.attrs["target"] == "14Re"
+
+    def test_load_rejects_bad_range(self):
+        with pytest.raises(ValueError, match="must be <="):
+            load("2024-03-02", "2024-03-01", 32)
+
+
+class TestLoadL1:
     def test_load_l1(self):
         with patch("midl._loader.ensure_cached", return_value=DATA_DIR / "202403_L1.csv"):
             ds = load("2024-03-01 00:00", "2024-03-01 00:03", "l1")
-            assert "X" in ds.data_vars
-            assert "B_source" in ds.data_vars
-            assert ds.attrs["target"] == "L1"
+        assert "X" in ds.data_vars
+        assert "B_source" in ds.data_vars
+        assert ds.attrs["target"] == "L1"
+        assert ds.attrs["midl_propagation"] is None
 
+    def test_load_l1_case_insensitive(self):
+        with patch("midl._loader.ensure_cached", return_value=DATA_DIR / "202403_L1.csv"):
+            ds = load("2024-03-01 00:00", "2024-03-01 00:03", "L1")
+        assert ds.attrs["target"] == "L1"
+
+    def test_l1_rejects_mhd_method(self):
+        with pytest.raises(ValueError, match="'l1' is only valid with method='ballistic'"):
+            load("2024-03-01", "2024-03-01 00:03", "l1", method="mhd")
+
+
+class TestLoadMhd:
     def test_load_mhd(self):
         with patch(
             "midl._loader.ensure_cached",
             return_value=DATA_DIR / "202403_mhd_032Re.csv",
         ):
-            ds = load("2024-03-01 00:00", "2024-03-01 00:03", "mhd", target_re=32)
+            ds = load("2024-03-01 00:00", "2024-03-01 00:03", 32, method="mhd")
         assert set(ds.data_vars) >= {"Bx", "By", "Bz", "Ux", "Uy", "Uz", "rho", "T"}
         assert ds.attrs["target"] == "32Re"
         assert ds.attrs["midl_propagation"] == {"method": "mhd", "target_re": 32.0}
         assert ds["Bx"].attrs["units"] == "nT"
 
-    def test_load_mhd_requires_target_re(self):
-        with pytest.raises(ValueError, match="requires target_re"):
-            load("2024-03-01", "2024-03-01 00:03", "mhd")
+    def test_mhd_rejects_non_integer_re(self):
+        with pytest.raises(ValueError, match="must be an integer"):
+            load("2024-03-01", "2024-03-01 00:03", 32.5, method="mhd")
 
-    def test_load_rejects_target_re_on_ballistic(self):
-        with pytest.raises(ValueError, match="only valid with target='mhd'"):
-            load("2024-03-01", "2024-03-01 00:03", "32re", target_re=32)
+    def test_mhd_rejects_out_of_range(self):
+        with pytest.raises(ValueError, match=r"\[-20, 180\]"):
+            load("2024-03-01", "2024-03-01 00:03", 200, method="mhd")
 
-    def test_load_rejects_bad_range(self):
-        with pytest.raises(ValueError, match="must be <="):
-            load("2024-03-02", "2024-03-01", "32re")
+
+class TestLoadCustomBallistic:
+    def test_custom_re_invokes_client_propagation(self):
+        l1_df = _read_csv(DATA_DIR / "202403_L1.csv")
+        times = pd.date_range("2024-03-01 00:00", "2024-03-01 00:09", freq="min")
+        sentinel = xr.Dataset(
+            {"Bx": (("time",), np.arange(len(times), dtype=float))},
+            coords={"time": times},
+        )
+        with (
+            patch("midl._loader._load_monthly", return_value=l1_df) as mock_lm,
+            patch("midl._loader.propagate", return_value=sentinel) as mock_prop,
+        ):
+            ds = load("2024-03-01 00:00", "2024-03-01 00:03", 20)
+
+        mock_lm.assert_called_once()
+        # _load_monthly receives the L1 canonical.
+        assert mock_lm.call_args[0][2] == "L1"
+        mock_prop.assert_called_once()
+        call_args = mock_prop.call_args[0]
+        assert call_args[1] == "ballistic"
+        assert call_args[2] == 20.0
+        # Result is sliced to the requested range.
+        assert ds.time.values[0] == pd.Timestamp("2024-03-01 00:00")
+        assert ds.time.values[-1] == pd.Timestamp("2024-03-01 00:03")
+
+    def test_custom_re_pads_leading_edge(self):
+        l1_df = _read_csv(DATA_DIR / "202403_L1.csv")
+        sentinel = xr.Dataset(
+            {"Bx": (("time",), [0.0])},
+            coords={"time": [pd.Timestamp("2024-03-01 00:00")]},
+        )
+        with (
+            patch("midl._loader._load_monthly", return_value=l1_df) as mock_lm,
+            patch("midl._loader.propagate", return_value=sentinel),
+        ):
+            load("2024-03-01 05:00", "2024-03-01 05:09", 20)
+
+        # _load_monthly(start_ts_padded, end_ts, "L1") — start is padded backward.
+        l1_start_arg = mock_lm.call_args[0][0]
+        assert l1_start_arg == pd.Timestamp("2024-03-01 03:00")
+
+
+class TestLoadValidation:
+    def test_unknown_method(self):
+        with pytest.raises(ValueError, match="Unknown method"):
+            load("2024-03-01", "2024-03-01 00:03", 32, method="magic")
+
+    def test_non_string_method(self):
+        with pytest.raises(ValueError, match="method must be a string"):
+            load("2024-03-01", "2024-03-01 00:03", 32, method=42)  # type: ignore[arg-type]
+
+    def test_bad_target_re_string(self):
+        with pytest.raises(ValueError, match="must be a number or 'l1'"):
+            load("2024-03-01", "2024-03-01 00:03", "bogus")
+
+    def test_bad_target_re_type(self):
+        with pytest.raises(ValueError, match="must be a number or 'l1'"):
+            load("2024-03-01", "2024-03-01 00:03", [32])  # type: ignore[arg-type]
+
+    def test_method_case_insensitive(self):
+        with patch("midl._loader.ensure_cached", return_value=DATA_DIR / "202403_32Re.csv"):
+            ds = load("2024-03-01 00:00", "2024-03-01 00:03", 32, method="BALLISTIC")
+        assert ds.attrs["midl_propagation"]["method"] == "ballistic"

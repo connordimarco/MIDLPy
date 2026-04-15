@@ -14,6 +14,13 @@ REF_DIR = Path(__file__).parent / "data" / "reference"
 
 pytestmark = pytest.mark.smoke
 
+# (load_arg, canonical_name) — load_arg is passed positionally as target_re.
+TARGETS = [
+    (14, "14Re"),
+    (32, "32Re"),
+    ("l1", "L1"),
+]
+
 
 def _compare_files(generated: Path, reference: Path) -> None:
     gen = generated.read_text(encoding="utf-8").replace("\r\n", "\n").strip()
@@ -26,22 +33,20 @@ def _compare_files(generated: Path, reference: Path) -> None:
 CASE1 = ("2005-01-01", "2005-01-02", "2005-01-01T0000_to_2005-01-02T0000")
 
 
-@pytest.mark.parametrize("target", ["14re", "32re", "l1"])
+@pytest.mark.parametrize("target_re,canonical", TARGETS)
 class TestSingleDay:
-    def test_csv(self, target, tmp_path):
+    def test_csv(self, target_re, canonical, tmp_path):
         start, end, label = CASE1
-        canonical = {"14re": "14Re", "32re": "32Re", "l1": "L1"}[target]
-        ds = midl.load(start, end, target)
-        out = tmp_path / f"test_{target}.csv"
+        ds = midl.load(start, end, target_re)
+        out = tmp_path / f"test_{canonical}.csv"
         midl.to_csv(ds, out)
         ref = REF_DIR / f"MIDL_{canonical}_{label}.csv"
         _compare_files(out, ref)
 
-    def test_dat(self, target, tmp_path):
+    def test_dat(self, target_re, canonical, tmp_path):
         start, end, label = CASE1
-        canonical = {"14re": "14Re", "32re": "32Re", "l1": "L1"}[target]
-        ds = midl.load(start, end, target)
-        out = tmp_path / f"test_{target}.dat"
+        ds = midl.load(start, end, target_re)
+        out = tmp_path / f"test_{canonical}.dat"
         midl.to_dat(ds, out)
         ref = REF_DIR / f"MIDL_{canonical}_{label}.dat"
         _compare_files(out, ref)
@@ -52,22 +57,20 @@ class TestSingleDay:
 CASE2 = ("2005-01-01 10:00", "2005-02-03 13:00", "2005-01-01T1000_to_2005-02-03T1300")
 
 
-@pytest.mark.parametrize("target", ["14re", "32re", "l1"])
+@pytest.mark.parametrize("target_re,canonical", TARGETS)
 class TestCrossMonth:
-    def test_csv(self, target, tmp_path):
+    def test_csv(self, target_re, canonical, tmp_path):
         start, end, label = CASE2
-        canonical = {"14re": "14Re", "32re": "32Re", "l1": "L1"}[target]
-        ds = midl.load(start, end, target)
-        out = tmp_path / f"test_{target}.csv"
+        ds = midl.load(start, end, target_re)
+        out = tmp_path / f"test_{canonical}.csv"
         midl.to_csv(ds, out)
         ref = REF_DIR / f"MIDL_{canonical}_{label}.csv"
         _compare_files(out, ref)
 
-    def test_dat(self, target, tmp_path):
+    def test_dat(self, target_re, canonical, tmp_path):
         start, end, label = CASE2
-        canonical = {"14re": "14Re", "32re": "32Re", "l1": "L1"}[target]
-        ds = midl.load(start, end, target)
-        out = tmp_path / f"test_{target}.dat"
+        ds = midl.load(start, end, target_re)
+        out = tmp_path / f"test_{canonical}.dat"
         midl.to_dat(ds, out)
         ref = REF_DIR / f"MIDL_{canonical}_{label}.dat"
         _compare_files(out, ref)
