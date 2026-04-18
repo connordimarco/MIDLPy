@@ -116,7 +116,7 @@ class TestLoadMhd:
             load("2024-03-01", "2024-03-01 00:03", 32.5, method="mhd")
 
     def test_mhd_rejects_out_of_range(self):
-        with pytest.raises(ValueError, match=r"\[-20, 180\]"):
+        with pytest.raises(ValueError, match=r"\[-70, 70\]"):
             load("2024-03-01", "2024-03-01 00:03", 200, method="mhd")
 
 

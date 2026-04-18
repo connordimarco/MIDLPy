@@ -9,13 +9,13 @@ import requests
 
 BASE_URL = "https://csem.engin.umich.edu/MIDL/data"
 
-MHD_VALID_RE: frozenset[int] = frozenset(range(-20, 181))
+MHD_VALID_RE: frozenset[int] = frozenset(range(-70, 71))
 
 
 def canonical_mhd(target_re: float | int) -> str:
     """Validate and canonicalize an MHD target Re value.
 
-    MHD data is only available at integer Re in ``[-20, 180]``.
+    MHD data is only available at integer Re in ``[-70, 70]``.
     """
     if not isinstance(target_re, (int, float)) or isinstance(target_re, bool):
         raise ValueError(
@@ -27,7 +27,7 @@ def canonical_mhd(target_re: float | int) -> str:
     re_int = int(as_float)
     if re_int not in MHD_VALID_RE:
         raise ValueError(
-            f"MHD target_re must be an integer in [-20, 180], got {re_int}"
+            f"MHD target_re must be an integer in [-70, 70], got {re_int}"
         )
     return f"mhd_{re_int:03d}Re"
 

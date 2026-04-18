@@ -42,7 +42,7 @@ Attributes:
 midl.load("2024-05-10 00:00", "2024-05-11 01:00", 14, method="ballistic")
 midl.load("2024-05-10 00:00", "2024-05-11 01:00", 32,method="ballistic") 
 
-# [-20,180]Re MHD-propagated data are available for direct download
+# [-70,70]Re MHD-propagated data are available for direct download
 midl.load("2024-05-10 00:00", "2024-05-11 01:00", 30, method="mhd")
 
 # Any value can be ballistically propagated client-side

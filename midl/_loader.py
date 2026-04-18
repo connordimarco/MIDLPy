@@ -101,7 +101,7 @@ def load(
           L1 and runs client-side ballistic propagation. ``"l1"`` is
           only valid with this method and returns the raw L1 dataset.
         - ``"mhd"`` — server-side 1D MHD propagation. ``target_re`` must
-          be an integer in ``[-20, 180]``.
+          be an integer in ``[-70, 70]``.
 
     Returns
     -------

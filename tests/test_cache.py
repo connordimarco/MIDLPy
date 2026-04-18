@@ -18,7 +18,7 @@ class TestCanonicalMhd:
         assert canonical_mhd(180) == "mhd_180Re"
 
     def test_mhd_negative_boundary(self):
-        assert canonical_mhd(-20) == "mhd_-20Re"
+        assert canonical_mhd(-70) == "mhd_-70Re"
 
     def test_mhd_small_negative(self):
         assert canonical_mhd(-5) == "mhd_-05Re"
@@ -27,12 +27,12 @@ class TestCanonicalMhd:
         assert canonical_mhd(32.0) == "mhd_032Re"
 
     def test_mhd_below_range(self):
-        with pytest.raises(ValueError, match=r"\[-20, 180\]"):
-            canonical_mhd(-21)
+        with pytest.raises(ValueError, match=r"\[-70, 70\]"):
+            canonical_mhd(-71)
 
     def test_mhd_above_range(self):
-        with pytest.raises(ValueError, match=r"\[-20, 180\]"):
-            canonical_mhd(181)
+        with pytest.raises(ValueError, match=r"\[-70, 70\]"):
+            canonical_mhd(71)
 
     def test_mhd_non_integer(self):
         with pytest.raises(ValueError, match="must be an integer"):
