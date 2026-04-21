@@ -13,8 +13,8 @@ pip install csem-midl
 ```python
 import midl
 
-ds = midl.load("2005-01-01 00:00", "2005-01-01 01:00", 32)
-print(ds)
+data = midl.load("2005-01-01 00:00", "2005-01-01 01:00", 32)
+print(data)
 ```
 
 ```
@@ -40,23 +40,23 @@ Attributes:
 ```python
 # 14Re and 32Re Ballistically-propagated data are available for direct download
 midl.load("2024-05-10 00:00", "2024-05-11 01:00", 14, method="ballistic")
-midl.load("2024-05-10 00:00", "2024-05-11 01:00", 32,method="ballistic") 
+midl.load("2024-05-10 00:00", "2024-05-11 01:00", 32, method="ballistic") 
 
 # [-70,70]Re MHD-propagated data are available for direct download
 midl.load("2024-05-10 00:00", "2024-05-11 01:00", 30, method="mhd")
 
 # Any value can be ballistically propagated client-side
-midl.load("2024-05-10 00:00", "2024-05-11 01:00", 20.25,method="ballistic") 
+midl.load("2024-05-10 00:00", "2024-05-11 01:00", 20.25, method="ballistic") 
 
 # Data at L1 can be downloaded directly as well 
-midl.load("2024-05-10 00:00", "2024-05-11 01:00", "l1")
+midl.load("2024-05-10 00:00", "2024-05-11 01:00", "L1")
 ```
 Client-side MHD propagation is not supported.
 
 Saving to file:
 ```python
-midl.to_csv(ds, "storm.csv")
-midl.to_dat(ds, "storm.dat")
+midl.to_csv(data, "storm.csv")
+midl.to_dat(data, "storm.dat")
 ```
 
 Data is cached locally after the first download.
