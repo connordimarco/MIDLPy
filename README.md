@@ -1,4 +1,4 @@
-# midl
+## Merged Interplanetary Data from L1
 
 Python client for the [MIDL solar wind dataset](https://csem.engin.umich.edu/MIDL/).
 
