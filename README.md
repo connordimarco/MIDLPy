@@ -61,6 +61,22 @@ midl.to_dat(data, "storm.dat")
 
 Data is cached locally after the first download.
 
+## Using with spacepy
+
+MIDL Datasets convert to a [spacepy](https://spacepy.github.io/) `SpaceData` in a few lines:
+
+```python
+import midl
+from spacepy.datamodel import SpaceData, dmarray
+
+ds = midl.load("2005-01-01 00:00", "2005-01-01 01:00", 32)
+
+sd = SpaceData(attrs=dict(ds.attrs))
+sd["Epoch"] = dmarray(ds["time"].values, attrs={"units": "UTC"})
+for name, da in ds.data_vars.items():
+    sd[name] = dmarray(da.values, attrs=dict(da.attrs))
+```
+
 ## See also
 
 - [MIDL-Pipeline](https://github.com/connordimarco/MIDL-Pipeline) — the code that produces the MIDL dataset
