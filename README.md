@@ -77,6 +77,10 @@ for name, da in ds.data_vars.items():
     sd[name] = dmarray(da.values, attrs=dict(da.attrs))
 ```
 
+## Tutorials
+
+- [Merging MIDL with IMP-8](examples/merge_imp8_tutorial.ipynb) — merge MIDL L1 with external satellite data to fill gaps in the 1998–2004 ACE-only era
+
 ## See also
 
 - [MIDL-Pipeline](https://github.com/connordimarco/MIDL-Pipeline) — the code that produces the MIDL dataset
